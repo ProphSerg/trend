@@ -29,14 +29,37 @@ def convertData(dt):
 
 def getPrc(a, b):
     try:
-        return int(a / b * 100)
+        return round(a / b * 100)
     except:
         return None
 
 def getTrend(bid, offer):
+    trend = (
+        ('к покупке', 'к продаже'),
+        ('green',     'red')
+    )
     if bid is None or offer is None:
         return ''
-    return inTAG('span', 'к покупке' if bid > offer else 'к продаже', param=['style="color:%s";' %('green' if bid > offer else 'red'),], NL=False)
+    idx = 0 if bid >= offer else 1
+    return inTAG('span', trend[0][idx], param=['style="color:%s";' %(trend[1][idx]), ], NL=False)
+
+
+def sendHeader():
+    print('Content-Type: text/html;charset=utf-8')
+    print()
+
+def sendDocBegin():
+    print(
+        '<!DOCTYPE html>\n'
+        '<html lang="ru_RU">\n'
+        '<head>\n'
+        '<meta charset="UTF-8">' +
+        inTAG('style', 'table {border-collapse: collapse; border: 1px solid black;}', NL=False) +
+        '\n</head><body>'
+    )
+
+def sendDocEnd():
+    print('</body></html>')
 
 def inTAG(tag, data, param=None, NL=True):
     return '<%s%s>%s</%s>%s' %(
@@ -74,15 +97,17 @@ for e in settingISS:
         data['marketdata'] = data['marketdata'] + convertData(j['marketdata'])
 
 sortBy = {}
-sortBy['VOLTODAY'] = sorted(data['marketdata'], key=lambda md: md['VOLTODAY'], reverse=True)
+#sortBy['VOLTODAY'] = sorted(data['marketdata'], key=lambda md: md['VOLTODAY'], reverse=True)
 sortBy['VALTODAY'] = sorted(data['marketdata'], key=lambda md: md['VALTODAY'], reverse=True)
 
-print('Content-Type: text/html\n')
-print('<!DOCTYPE html><html lang="ru_RU"><head><meta charset="UTF-8">', flush=True)
-print(inTAG('style', 'table {border-collapse: collapse; border: 1px solid black;}'))
-print('</head><body>')
+sendHeader()
+sendDocBegin()
 
-print(inTAG('h3', 'X-MicexPassport-Marker: ' + inTAG('b', req.headers['X-MicexPassport-Marker'], NL=False)))
+print(inTAG('h3', 'X-MicexPassport-Marker: ' +
+            inTAG('span', req.headers['X-MicexPassport-Marker'],
+                  param=['style="color:%s";' %('green' if req.headers['X-MicexPassport-Marker'] == 'granted' else 'red'), ],
+                  NL=False))
+      )
 print(inTAG('h3', 'Загружено: %d инструменов' %len(data['marketdata'])))
 
 print('<table border="1" style="border: 2px solid blue;"><tr>')
@@ -92,7 +117,7 @@ print('</tr><tr>')
 
 for s in sortBy:
     col = ['BOARDID', 'SECID', s, 'BIDDEPTH', 'BIDDEPTHT', 'OFFERDEPTH', 'OFFERDEPTHT']
-    print( \
+    print(
         '<td><table border="1">' +
         inTAG('tr', ''.join(list(
             map(lambda c: inTAG('th', c, param=['style="text-align: center;"',], NL=False), col +
@@ -129,7 +154,7 @@ for s in sortBy:
     offert = getPrc(tot['OFFERDEPTHT'], tot['BIDDEPTHT'] + tot['OFFERDEPTHT'])
     print(
         inTAG('tr',
-            inTAG('td', 'ИТОГО', param=['colspan=3',], NL=False) +
+            inTAG('th', 'ИТОГО', param=['colspan=3 style="text-align: left;"',], NL=False) +
             inTAG('td', tot['BIDDEPTH'], NL=False) +
             inTAG('td', tot['BIDDEPTHT'], NL=False) +
             inTAG('td', tot['OFFERDEPTH'], NL=False) +
@@ -144,9 +169,32 @@ for s in sortBy:
     )
 
     print('</table></td>')
+
 print('</tr></table>')
 print(inTAG('h3', 'BID %% = BIDDEPTH / (BIDDEPTH + OFFERDEPTH) * 100%'))
 print(inTAG('h3', 'OFFER %% = OFFERDEPTH / (BIDDEPTH + OFFERDEPTH) * 100%'))
 print(inTAG('h3', 'BIDT %% = BIDDEPTHT / (BIDDEPTHT + OFFERDEPTHT) * 100%'))
 print(inTAG('h3', 'OFFERT %% = OFFERDEPTHT / (BIDDEPTHT + OFFERDEPTHT) * 100%'))
-print('</body></html>')
+
+req = requests.get(URL_PREF + 'iss/engines/stock/markets/shares/securities/columns.json',
+       params={
+           'iss.meta': 'off',
+           'iss.only': 'marketdata',
+       },
+)
+j = req.json()
+
+print('<table border="1">')
+for c in ['BOARDID', 'SECID', 'VOLTODAY', 'VALTODAY', 'BIDDEPTH', 'BIDDEPTHT', 'OFFERDEPTH', 'OFFERDEPTHT']:
+    for d in j['marketdata']['data']:
+        if d[1] == c:
+            print(
+                inTAG('tr',
+                      inTAG('th', c, param=['style="text-align: left;"',], NL=False) +
+                      inTAG('td', d[3], NL=False)
+                , NL=False)
+            )
+            break
+print('</table>')
+
+sendDocEnd()
