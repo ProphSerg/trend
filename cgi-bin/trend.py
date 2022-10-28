@@ -64,13 +64,8 @@ sortBy = {}
 sortBy['VALTODAY'] = sorted(data['marketdata'], key=lambda md: md['VALTODAY'], reverse=True)
 
 sendHeader()
-sendDocBegin()
+sendDocBegin(style='table {border-collapse: collapse; border: 1px solid black;}', MOEXinfo=req)
 
-print(inTAG('h3', 'X-MicexPassport-Marker: ' +
-            inTAG('span', req.headers['X-MicexPassport-Marker'],
-                  param=['style="color:%s";' %('green' if req.headers['X-MicexPassport-Marker'] == 'granted' else 'red'), ],
-                  NL=False))
-      )
 print(inTAG('h3', 'Загружено: %d инструменов' %len(data['marketdata'])))
 
 print('<table border="1" style="border: 2px solid blue;"><tr>')
@@ -140,7 +135,7 @@ print(inTAG('h3', 'OFFER %% = OFFERDEPTH / (BIDDEPTH + OFFERDEPTH) * 100%'))
 print(inTAG('h3', 'BIDT %% = BIDDEPTHT / (BIDDEPTHT + OFFERDEPTHT) * 100%'))
 print(inTAG('h3', 'OFFERT %% = OFFERDEPTHT / (BIDDEPTHT + OFFERDEPTHT) * 100%'))
 
-req = requests.get(URL_PREF + 'iss/engines/stock/markets/shares/securities/columns.json',
+req = MOEXrequest('iss/engines/stock/markets/shares/securities/columns.json',
        params={
            'iss.meta': 'off',
            'iss.only': 'marketdata',
