@@ -1,0 +1,10 @@
+services:
+  i2pd:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: i2pd
+    volumes:
+      - $PWD/data:/app/data
+    tty: true
+    restart: unless-stopped
