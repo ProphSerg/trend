@@ -6,5 +6,8 @@ services:
     container_name: i2pd
     volumes:
       - $PWD/data:/app/data
+    ports:
+      - 127.0.0.1:8888:8888
+      - 127.0.0.1:7070:7070
     tty: true
     restart: unless-stopped

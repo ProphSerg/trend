@@ -63,10 +63,11 @@ RUN apk add --no-cache --update \
     &&  ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone
 
-COPY --chmod=+x --from=builder /tmp/build/i2pd/i2pd ${I2PD_DIR}/
+COPY --from=builder /tmp/build/i2pd/i2pd ${I2PD_DIR}/
 COPY --from=builder /tmp/build/i2pd/certificates.tgz ${I2PD_DIR}/
 COPY --from=builder /tmp/build/i2pd/contrib/i2pd.conf ${I2PD_DIR}/i2pd.conf.default
-COPY --chmod=+x entrypoint.sh ${I2PD_DIR}/
+COPY entrypoint.sh ${I2PD_DIR}/
+RUN chmod +x ${I2PD_DIR}/entrypoint.sh ${I2PD_DIR}/i2pd
 
 # RUN addgroup -S -g ${GID} qbt \
 #     && adduser -S -u ${UID} -G qbt qbt \
